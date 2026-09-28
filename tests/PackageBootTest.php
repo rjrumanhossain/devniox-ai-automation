@@ -29,4 +29,11 @@ class PackageBootTest extends TestCase
         $this->assertTrue(config('devniox-ai.enabled'));
         $this->assertSame('openai', config('devniox-ai.ai.provider'));
     }
+
+    public function test_install_command_is_registered(): void
+    {
+        $commands = array_keys($this->app['Illuminate\Contracts\Console\Kernel']->all());
+
+        $this->assertContains('devniox-ai:install', $commands);
+    }
 }

@@ -10,8 +10,12 @@ return new class extends Migration
     {
         Schema::create('devniox_conversations', function (Blueprint $table) {
             $table->id();
+            $table->string('uuid')->unique();
             $table->string('channel')->index();
             $table->string('external_id')->nullable()->index();
+            $table->string('business_key')->nullable()->index();
+            $table->string('owner_type')->nullable()->index();
+            $table->unsignedBigInteger('owner_id')->nullable()->index();
             $table->unsignedBigInteger('tenant_id')->nullable()->index();
             $table->string('customer_id')->nullable()->index();
             $table->string('status')->default('open');
@@ -34,6 +38,10 @@ return new class extends Migration
 
         Schema::create('devniox_customers', function (Blueprint $table) {
             $table->id();
+            $table->string('business_key')->nullable()->index();
+            $table->string('owner_type')->nullable()->index();
+            $table->unsignedBigInteger('owner_id')->nullable()->index();
+            $table->unsignedBigInteger('tenant_id')->nullable()->index();
             $table->string('external_id')->nullable()->index();
             $table->string('channel')->index();
             $table->string('name')->nullable();
@@ -46,6 +54,10 @@ return new class extends Migration
 
         Schema::create('devniox_leads', function (Blueprint $table) {
             $table->id();
+            $table->string('business_key')->nullable()->index();
+            $table->string('owner_type')->nullable()->index();
+            $table->unsignedBigInteger('owner_id')->nullable()->index();
+            $table->unsignedBigInteger('tenant_id')->nullable()->index();
             $table->string('source')->nullable();
             $table->string('name')->nullable();
             $table->string('email')->nullable()->index();
@@ -57,6 +69,10 @@ return new class extends Migration
 
         Schema::create('devniox_knowledge_items', function (Blueprint $table) {
             $table->id();
+            $table->string('business_key')->nullable()->index();
+            $table->string('owner_type')->nullable()->index();
+            $table->unsignedBigInteger('owner_id')->nullable()->index();
+            $table->unsignedBigInteger('tenant_id')->nullable()->index();
             $table->string('category')->nullable();
             $table->string('title');
             $table->longText('content');
@@ -66,14 +82,23 @@ return new class extends Migration
 
         Schema::create('devniox_faqs', function (Blueprint $table) {
             $table->id();
+            $table->string('business_key')->nullable()->index();
+            $table->string('owner_type')->nullable()->index();
+            $table->unsignedBigInteger('owner_id')->nullable()->index();
+            $table->unsignedBigInteger('tenant_id')->nullable()->index();
             $table->string('question');
             $table->longText('answer');
+            $table->json('keywords')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
 
         Schema::create('devniox_products', function (Blueprint $table) {
             $table->id();
+            $table->string('business_key')->nullable()->index();
+            $table->string('owner_type')->nullable()->index();
+            $table->unsignedBigInteger('owner_id')->nullable()->index();
+            $table->unsignedBigInteger('tenant_id')->nullable()->index();
             $table->string('name');
             $table->text('description')->nullable();
             $table->decimal('price', 10, 2)->nullable();
@@ -83,6 +108,10 @@ return new class extends Migration
 
         Schema::create('devniox_services', function (Blueprint $table) {
             $table->id();
+            $table->string('business_key')->nullable()->index();
+            $table->string('owner_type')->nullable()->index();
+            $table->unsignedBigInteger('owner_id')->nullable()->index();
+            $table->unsignedBigInteger('tenant_id')->nullable()->index();
             $table->string('name');
             $table->text('description')->nullable();
             $table->decimal('price', 10, 2)->nullable();
@@ -92,6 +121,10 @@ return new class extends Migration
 
         Schema::create('devniox_channel_connections', function (Blueprint $table) {
             $table->id();
+            $table->string('business_key')->nullable()->index();
+            $table->string('owner_type')->nullable()->index();
+            $table->unsignedBigInteger('owner_id')->nullable()->index();
+            $table->unsignedBigInteger('tenant_id')->nullable()->index();
             $table->string('channel')->index();
             $table->string('connection_name')->nullable();
             $table->text('credentials_encrypted')->nullable();
@@ -101,6 +134,10 @@ return new class extends Migration
 
         Schema::create('devniox_automation_rules', function (Blueprint $table) {
             $table->id();
+            $table->string('business_key')->nullable()->index();
+            $table->string('owner_type')->nullable()->index();
+            $table->unsignedBigInteger('owner_id')->nullable()->index();
+            $table->unsignedBigInteger('tenant_id')->nullable()->index();
             $table->string('name');
             $table->string('event');
             $table->json('conditions')->nullable();
@@ -120,6 +157,10 @@ return new class extends Migration
 
         Schema::create('devniox_webhook_events', function (Blueprint $table) {
             $table->id();
+            $table->string('business_key')->nullable()->index();
+            $table->string('owner_type')->nullable()->index();
+            $table->unsignedBigInteger('owner_id')->nullable()->index();
+            $table->string('signature')->nullable();
             $table->string('channel')->index();
             $table->string('provider_event_id')->nullable()->unique();
             $table->json('payload');
@@ -127,8 +168,24 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        Schema::create('devniox_ai_settings', function (Blueprint $table) {
+            $table->id();
+            $table->string('business_key', 120)->nullable()->index();
+            $table->string('owner_type', 120)->nullable()->index();
+            $table->unsignedBigInteger('owner_id')->nullable()->index();
+            $table->unsignedBigInteger('tenant_id')->nullable()->index();
+            $table->string('key', 120)->index();
+            $table->json('value')->nullable();
+            $table->timestamps();
+            $table->unique(['business_key', 'owner_type', 'owner_id', 'tenant_id', 'key'], 'devniox_settings_scope_key_unique');
+        });
+
         Schema::create('devniox_audit_logs', function (Blueprint $table) {
             $table->id();
+            $table->string('business_key')->nullable()->index();
+            $table->string('owner_type')->nullable()->index();
+            $table->unsignedBigInteger('owner_id')->nullable()->index();
+            $table->unsignedBigInteger('tenant_id')->nullable()->index();
             $table->string('event');
             $table->string('channel')->nullable();
             $table->string('actor_type')->nullable();
@@ -141,6 +198,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('devniox_audit_logs');
+        Schema::dropIfExists('devniox_ai_settings');
         Schema::dropIfExists('devniox_webhook_events');
         Schema::dropIfExists('devniox_conversation_notes');
         Schema::dropIfExists('devniox_automation_rules');

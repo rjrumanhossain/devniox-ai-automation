@@ -10,6 +10,8 @@ class WebhookTest extends TestCase
 {
     public function test_webhook_routes_exist(): void
     {
+        config()->set('devniox-ai.whatsapp.webhook_secret', null);
+
         $this->get('/devniox-ai/status')->assertOk();
 
         $response = $this->post('/devniox-ai/webhooks/whatsapp', [
@@ -36,6 +38,6 @@ class WebhookTest extends TestCase
         $payload = ['hello' => 'world'];
         $signature = hash_hmac('sha256', json_encode($payload), 'secret');
 
-        $this->assertTrue((new WhatsAppChannel())->validateWebhook($payload, $signature));
+        $this->assertTrue((new WhatsAppChannel)->validateWebhook($payload, $signature));
     }
 }

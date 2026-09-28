@@ -10,14 +10,16 @@ use RuntimeException;
 
 class FacebookMessengerChannel implements ChannelInterface
 {
+    public function __construct(protected array $credentials = []) {}
+
     public function sendMessage(array $payload): array
     {
-        if (empty(config('devniox-ai.messenger.page_access_token'))) {
+        if (empty($this->credential('page_access_token'))) {
             throw new RuntimeException('Messenger credentials are not configured.');
         }
 
         $response = Http::asJson()->post(
-            'https://graph.facebook.com/v18.0/me/messages?access_token='.urlencode(config('devniox-ai.messenger.page_access_token')),
+            rtrim((string) $this->credential('api_url'), '/').'/me/messages?access_token='.urlencode((string) $this->credential('page_access_token')),
             [
                 'recipient' => ['id' => $payload['to']],
                 'message' => ['text' => $payload['message']],
@@ -37,13 +39,31 @@ class FacebookMessengerChannel implements ChannelInterface
 
     public function validateWebhook(array $payload, ?string $signature = null): bool
     {
-        $verifyToken = config('devniox-ai.messenger.verify_token');
+        $verifyToken = $this->credential('verify_token');
 
         if ($verifyToken && isset($payload['hub_mode'], $payload['hub_verify_token'])) {
             return $payload['hub_verify_token'] === $verifyToken;
         }
 
         return ! empty($payload);
+    }
+
+    public function validateRawWebhook(string $rawBody, ?string $signature = null): bool
+    {
+        $secret = $this->credential('app_secret');
+
+        if (empty($secret)) {
+            return true;
+        }
+
+        if ($signature === null) {
+            return false;
+        }
+
+        $actual = str_starts_with($signature, 'sha256=') ? substr($signature, 7) : $signature;
+        $expected = hash_hmac('sha256', $rawBody, $secret);
+
+        return hash_equals($expected, $actual);
     }
 
     public function parseIncomingMessage(array $payload): array
@@ -66,8 +86,13 @@ class FacebookMessengerChannel implements ChannelInterface
     {
         return [
             'channel' => 'messenger',
-            'connected' => ! empty(config('devniox-ai.messenger.page_access_token')),
-            'status' => ! empty(config('devniox-ai.messenger.page_access_token')) ? 'configured' : 'not_configured',
+            'connected' => ! empty($this->credential('page_access_token')),
+            'status' => ! empty($this->credential('page_access_token')) ? 'configured' : 'not_configured',
         ];
+    }
+
+    protected function credential(string $key): mixed
+    {
+        return $this->credentials[$key] ?? config('devniox-ai.messenger.'.$key);
     }
 }

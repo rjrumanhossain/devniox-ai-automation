@@ -6,7 +6,5 @@ namespace Devniox\AiAutomation\Events;
 
 class WebhookReceived
 {
-    public function __construct(public array $payload)
-    {
-    }
+    public function __construct(public array $payload) {}
 }

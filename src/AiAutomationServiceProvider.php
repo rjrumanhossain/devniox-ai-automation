@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace Devniox\AiAutomation;
 
+use Devniox\AiAutomation\AI\Contracts\AiProviderInterface;
+use Devniox\AiAutomation\AI\Providers\OpenAiProvider;
+use Devniox\AiAutomation\Channels\Contracts\ChannelInterface;
+use Devniox\AiAutomation\Channels\WebsiteChannel;
+use Devniox\AiAutomation\Console\InstallCommand;
 use Illuminate\Support\ServiceProvider;
 
 class AiAutomationServiceProvider extends ServiceProvider
@@ -12,15 +17,15 @@ class AiAutomationServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(__DIR__.'/../config/devniox-ai.php', 'devniox-ai');
 
-        $this->app->bind(\Devniox\AiAutomation\AI\Contracts\AiProviderInterface::class, function () {
-            return new \Devniox\AiAutomation\AI\Providers\OpenAiProvider(
+        $this->app->bind(AiProviderInterface::class, function () {
+            return new OpenAiProvider(
                 config('devniox-ai.ai.api_key'),
                 config('devniox-ai.ai.model')
             );
         });
 
-        $this->app->bind(\Devniox\AiAutomation\Channels\Contracts\ChannelInterface::class, function () {
-            return new \Devniox\AiAutomation\Channels\WebsiteChannel();
+        $this->app->bind(ChannelInterface::class, function () {
+            return new WebsiteChannel;
         });
     }
 
@@ -34,8 +39,19 @@ class AiAutomationServiceProvider extends ServiceProvider
             __DIR__.'/../database/migrations' => database_path('migrations'),
         ], 'devniox-ai-migrations');
 
+        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadRoutesFrom(__DIR__.'/../routes/devniox-ai.php');
 
-        $this->loadViewsFrom(__DIR__.'/../resources/views', 'devniox-ai');
+        $viewsPath = __DIR__.'/../resources/views';
+
+        if (is_dir($viewsPath)) {
+            $this->loadViewsFrom($viewsPath, 'devniox-ai');
+        }
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                InstallCommand::class,
+            ]);
+        }
     }
 }

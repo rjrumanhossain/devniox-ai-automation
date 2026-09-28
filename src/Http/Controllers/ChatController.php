@@ -4,24 +4,27 @@ declare(strict_types=1);
 
 namespace Devniox\AiAutomation\Http\Controllers;
 
+use Devniox\AiAutomation\Models\Conversation;
 use Devniox\AiAutomation\Services\ChatbotService;
+use Devniox\AiAutomation\Support\TenantResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Validator;
 
 class ChatController extends Controller
 {
-    public function __construct(protected ChatbotService $chatbotService)
-    {
-    }
+    public function __construct(protected ChatbotService $chatbotService) {}
 
     public function send(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'message' => ['required', 'string', 'min:1', 'max:1000'],
             'conversation_id' => ['nullable', 'string', 'max:120'],
+            'business_key' => ['nullable', 'string', 'max:120'],
+            'customer_id' => ['nullable', 'string', 'max:120'],
             'customer_name' => ['nullable', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:50'],
             'email' => ['nullable', 'email', 'max:255'],
@@ -36,8 +39,8 @@ class ChatController extends Controller
         }
 
         $validated = $validator->validated();
-
         $message = trim((string) ($validated['message'] ?? ''));
+
         if ($message === '') {
             return response()->json([
                 'success' => false,
@@ -46,7 +49,9 @@ class ChatController extends Controller
         }
 
         $key = 'devniox-ai-chat:'.($request->ip() ?? 'guest');
-        if (RateLimiter::tooManyAttempts($key, 30)) {
+        $limit = (int) config('devniox-ai.website.rate_limit', 60);
+
+        if (RateLimiter::tooManyAttempts($key, $limit)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Too many chat attempts. Please wait a moment and try again.',
@@ -56,28 +61,38 @@ class ChatController extends Controller
         RateLimiter::hit($key, 60);
 
         $result = $this->chatbotService->handle($message, [
+            'request' => $request,
+            'channel' => 'website',
             'conversation_id' => $validated['conversation_id'] ?? null,
+            'business_key' => $validated['business_key'] ?? null,
+            'customer_id' => $validated['customer_id'] ?? null,
             'customer_name' => $validated['customer_name'] ?? null,
             'phone' => $validated['phone'] ?? null,
             'email' => $validated['email'] ?? null,
             'ip' => $request->ip(),
         ]);
 
-        $status = $result['success'] ? 200 : 500;
-
-        return response()->json($result, $status);
+        return response()->json($result, $result['success'] ? 200 : 500);
     }
 
     public function show(Request $request, string $conversation): JsonResponse
     {
+        $scope = TenantResolver::resolve($request, $request->all());
+        $query = Conversation::query()->where('uuid', $conversation);
+        TenantResolver::applyScope($query, $scope);
+
+        $record = $query->first();
+
         return response()->json([
             'conversation' => $conversation,
-            'messages' => [],
-            'success' => true,
-        ]);
+            'messages' => $record
+                ? $record->messages()->oldest('id')->get(['direction', 'content', 'status', 'metadata', 'created_at'])
+                : [],
+            'success' => (bool) $record,
+        ], $record ? 200 : 404);
     }
 
-    public function widgetScript(): \Illuminate\Http\Response
+    public function widgetScript(): Response
     {
         $js = <<<'JS'
 (function() {
@@ -88,21 +103,33 @@ class ChatController extends Controller
   const widget = {
     config: {
       title: 'Devniox AI Assistant',
-      icon: '💬',
-      position: 'bottom-right',
-      endpoint: '/devniox-ai/chat'
+      icon: 'AI',
+      baseUrl: '/devniox-ai',
+      endpoint: null,
+      businessKey: null,
+      customerId: null,
+      conversationId: null
+    },
+    init: function(config) {
+      this.config = Object.assign({}, this.config, config || {});
+      this.config.endpoint = this.config.endpoint || (this.config.baseUrl.replace(/\/$/, '') + '/chat');
+      this.createWidget();
     },
     createWidget: function() {
+      if (document.querySelector('.devniox-ai-widget')) {
+        return;
+      }
+
       const wrapper = document.createElement('div');
       wrapper.className = 'devniox-ai-widget';
       wrapper.innerHTML = `
         <button class="devniox-ai-toggle" type="button" aria-label="Open chat" title="Open chat">
-          <span class="devniox-ai-icon">💬</span>
+          <span class="devniox-ai-icon">${this.config.icon}</span>
         </button>
         <div class="devniox-ai-window" style="display:none;">
           <div class="devniox-ai-header">
-            <span>Devniox AI</span>
-            <button type="button" class="devniox-ai-close" aria-label="Close chat">×</button>
+            <span>${this.config.title}</span>
+            <button type="button" class="devniox-ai-close" aria-label="Close chat">&times;</button>
           </div>
           <div class="devniox-ai-messages"></div>
           <div class="devniox-ai-input-box">
@@ -128,7 +155,8 @@ class ChatController extends Controller
           border-radius: 50%;
           background: #0f172a;
           color: #fff;
-          font-size: 24px;
+          font-size: 18px;
+          font-weight: 700;
           cursor: pointer;
           box-shadow: 0 12px 30px rgba(15, 23, 42, 0.26);
         }
@@ -136,7 +164,7 @@ class ChatController extends Controller
           width: min(360px, calc(100vw - 30px));
           background: #fff;
           border: 1px solid rgba(15, 23, 42, 0.08);
-          border-radius: 18px;
+          border-radius: 14px;
           overflow: hidden;
           box-shadow: 0 18px 50px rgba(15, 23, 42, 0.18);
           margin-bottom: 12px;
@@ -146,7 +174,7 @@ class ChatController extends Controller
           justify-content: space-between;
           align-items: center;
           padding: 12px 16px;
-          background: linear-gradient(135deg, #111827, #0f172a);
+          background: #0f172a;
           color: #fff;
           font-weight: 700;
         }
@@ -167,7 +195,7 @@ class ChatController extends Controller
         .devniox-ai-message {
           margin-bottom: 10px;
           padding: 10px 12px;
-          border-radius: 12px;
+          border-radius: 10px;
           line-height: 1.45;
           font-size: 14px;
           max-width: 85%;
@@ -192,6 +220,7 @@ class ChatController extends Controller
         }
         .devniox-ai-input {
           flex: 1;
+          min-width: 0;
           padding: 10px 12px;
           border: 1px solid #cbd5e1;
           border-radius: 10px;
@@ -252,20 +281,26 @@ class ChatController extends Controller
         status.textContent = 'Thinking...';
         messages.appendChild(status);
 
-        fetch('/devniox-ai/chat', {
+        fetch(widget.config.endpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
           },
-          body: JSON.stringify({ message: text })
+          body: JSON.stringify({
+            message: text,
+            business_key: widget.config.businessKey,
+            customer_id: widget.config.customerId,
+            conversation_id: widget.config.conversationId
+          })
         }).then(function(response) {
           return response.json();
         }).then(function(data) {
           status.remove();
-          if (data && data.message) {
-            appendMessage('ai', data.message);
+          if (data && data.conversation_id) {
+            widget.config.conversationId = data.conversation_id;
           }
+          appendMessage('ai', data && data.message ? data.message : 'Sorry, I could not answer that right now.');
         }).catch(function() {
           status.textContent = 'Sorry, something went wrong. Please try again.';
         });
@@ -281,14 +316,16 @@ class ChatController extends Controller
   };
 
   window.DevnioxAiWidget = widget;
-  widget.createWidget();
+  if (window.DevnioxAiAutoInit !== false) {
+    widget.init(window.DevnioxAiConfig || {});
+  }
 })();
 JS;
 
         return response($js, 200, ['Content-Type' => 'application/javascript']);
     }
 
-    public function widgetCss(): \Illuminate\Http\Response
+    public function widgetCss(): Response
     {
         $css = <<<'CSS'
 .devniox-ai-widget {

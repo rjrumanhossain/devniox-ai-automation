@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Devniox\AiAutomation\Tests;
 
 use Devniox\AiAutomation\Channels\FacebookMessengerChannel;
-use Devniox\AiAutomation\Channels\WhatsAppChannel;
 use Devniox\AiAutomation\Channels\WebsiteChannel;
+use Devniox\AiAutomation\Channels\WhatsAppChannel;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -14,7 +14,7 @@ class ChannelContractTest extends TestCase
 {
     public function test_website_channel_parses_messages(): void
     {
-        $channel = new WebsiteChannel();
+        $channel = new WebsiteChannel;
 
         $parsed = $channel->parseIncomingMessage([
             'customer_id' => 'cust-1',
@@ -34,7 +34,7 @@ class ChannelContractTest extends TestCase
 
         $this->expectException(RuntimeException::class);
 
-        (new WhatsAppChannel())->sendMessage(['to' => '123', 'message' => 'Hi']);
+        (new WhatsAppChannel)->sendMessage(['to' => '123', 'message' => 'Hi']);
     }
 
     public function test_messenger_channel_sends_message(): void
@@ -47,7 +47,7 @@ class ChannelContractTest extends TestCase
             ], 200),
         ]);
 
-        $result = (new FacebookMessengerChannel())->sendMessage(['to' => '456', 'message' => 'Hi']);
+        $result = (new FacebookMessengerChannel)->sendMessage(['to' => '456', 'message' => 'Hi']);
 
         $this->assertSame('sent', $result['status']);
         $this->assertSame('mid_123', $result['provider_message_id']);

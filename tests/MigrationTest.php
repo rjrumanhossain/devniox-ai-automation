@@ -25,6 +25,7 @@ class MigrationTest extends TestCase
             'devniox_automation_rules',
             'devniox_conversation_notes',
             'devniox_webhook_events',
+            'devniox_ai_settings',
             'devniox_audit_logs',
         ];
 

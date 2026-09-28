@@ -211,6 +211,12 @@ class ChatController extends Controller
           background: #e2e8f0;
           color: #0f172a;
         }
+        .devniox-ai-message a {
+          color: inherit;
+          font-weight: 700;
+          text-decoration: underline;
+          text-underline-offset: 2px;
+        }
         .devniox-ai-input-box {
           display: flex;
           border-top: 1px solid #e2e8f0;
@@ -260,10 +266,43 @@ class ChatController extends Controller
         windowEl.style.display = 'none';
       });
 
+      const appendTextWithLinks = function(element, text) {
+        const pattern = /(https?:\/\/[^\s<>"']+)/g;
+        let lastIndex = 0;
+        let match;
+
+        while ((match = pattern.exec(text)) !== null) {
+          const url = match[0];
+          const cleanUrl = url.replace(/[.,!?)]$/, '');
+          const trailing = url.slice(cleanUrl.length);
+
+          if (match.index > lastIndex) {
+            element.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+          }
+
+          const anchor = document.createElement('a');
+          anchor.href = cleanUrl;
+          anchor.textContent = cleanUrl;
+          anchor.target = '_blank';
+          anchor.rel = 'noopener noreferrer';
+          element.appendChild(anchor);
+
+          if (trailing) {
+            element.appendChild(document.createTextNode(trailing));
+          }
+
+          lastIndex = match.index + url.length;
+        }
+
+        if (lastIndex < text.length) {
+          element.appendChild(document.createTextNode(text.slice(lastIndex)));
+        }
+      };
+
       const appendMessage = function(role, text) {
         const item = document.createElement('div');
         item.className = 'devniox-ai-message ' + role;
-        item.textContent = text;
+        appendTextWithLinks(item, text);
         messages.appendChild(item);
         messages.scrollTop = messages.scrollHeight;
       };

@@ -126,4 +126,14 @@ class ChatbotTest extends TestCase
         $this->assertStringContainsString('৳1,250', $response->json('message'));
         $this->assertStringContainsString('https://example.test/product/blue-hoodie', $response->json('message'));
     }
+
+    public function test_widget_turns_urls_into_clickable_links(): void
+    {
+        $response = $this->get('/devniox-ai/widget.js');
+
+        $response->assertOk();
+        $response->assertSee('appendTextWithLinks', false);
+        $response->assertSee("document.createElement('a')", false);
+        $response->assertSee("anchor.target = '_blank'", false);
+    }
 }

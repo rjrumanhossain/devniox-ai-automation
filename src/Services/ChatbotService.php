@@ -252,6 +252,7 @@ class ChatbotService
 
         $table = (string) config('devniox-ai.commerce.table', 'products');
         $nameColumn = (string) config('devniox-ai.commerce.name_column', 'name');
+        $slugColumn = (string) config('devniox-ai.commerce.slug_column', 'slug');
         $priceColumn = (string) config('devniox-ai.commerce.price_column', 'new_price');
 
         if (! Schema::hasTable($table) || ! Schema::hasColumn($table, $nameColumn) || ! Schema::hasColumn($table, $priceColumn)) {
@@ -270,13 +271,24 @@ class ChatbotService
             $query->where($statusColumn, config('devniox-ai.commerce.active_value', 1));
         }
 
-        $query->where(function ($inner) use ($nameColumn, $terms) {
+        $query->where(function ($inner) use ($nameColumn, $slugColumn, $table, $terms) {
             foreach ($terms as $term) {
                 $inner->orWhere($nameColumn, 'like', '%'.$term.'%');
+
+                if (Schema::hasColumn($table, $slugColumn)) {
+                    $inner->orWhere($slugColumn, 'like', '%'.$term.'%');
+                }
             }
         });
 
-        $product = $query->latest('id')->first();
+        $product = $query->latest('id')->limit(30)->get()->sortByDesc(function ($product) use ($nameColumn, $slugColumn, $terms) {
+            $haystack = mb_strtolower(trim(((string) ($product->{$nameColumn} ?? '')).' '.((string) ($product->{$slugColumn} ?? ''))));
+
+            return collect($terms)
+                ->filter(fn ($term) => str_contains($haystack, $term))
+                ->count();
+        })->first();
+
         if (! $product) {
             return null;
         }
@@ -354,9 +366,12 @@ class ChatbotService
             return null;
         }
 
+        $id = rawurlencode((string) ($product->id ?? ''));
+        $slug = rawurlencode(trim((string) ($product->{$slugColumn} ?? '')) ?: $id);
+
         $path = str_replace(
             ['{id}', '{slug}'],
-            [(string) ($product->id ?? ''), (string) ($product->{$slugColumn} ?? '')],
+            [$id, $slug],
             $template
         );
 

@@ -105,6 +105,16 @@ class ChatbotTest extends TestCase
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+        \DB::table('products')->insert([
+            'name' => 'Blue Wall Rack',
+            'slug' => 'blue-wall-rack',
+            'new_price' => 950,
+            'old_price' => null,
+            'stock' => 3,
+            'status' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
 
         $response = $this->post('/devniox-ai/chat', [
             'message' => 'Blue Hoodie price stock',
@@ -114,6 +124,6 @@ class ChatbotTest extends TestCase
         $this->assertSame('commerce', $response->json('source'));
         $this->assertStringContainsString('Blue Hoodie', $response->json('message'));
         $this->assertStringContainsString('৳1,250', $response->json('message'));
-        $this->assertStringContainsString('https://example.test/product/1', $response->json('message'));
+        $this->assertStringContainsString('https://example.test/product/blue-hoodie', $response->json('message'));
     }
 }

@@ -86,7 +86,7 @@ return [
         'stock_column' => env('AI_AUTOMATION_COMMERCE_STOCK_COLUMN', 'stock'),
         'status_column' => env('AI_AUTOMATION_COMMERCE_STATUS_COLUMN', 'status'),
         'active_value' => env('AI_AUTOMATION_COMMERCE_ACTIVE_VALUE', 1),
-        'product_url' => env('AI_AUTOMATION_COMMERCE_PRODUCT_URL', '/product/{id}'),
+        'product_url' => env('AI_AUTOMATION_COMMERCE_PRODUCT_URL', '/product/{slug}'),
     ],
     'encryption' => [
         'keys' => [

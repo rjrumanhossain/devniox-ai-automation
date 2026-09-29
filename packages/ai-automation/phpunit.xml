@@ -7,7 +7,7 @@
 >
     <testsuites>
         <testsuite name="Package Test Suite">
-            <directory suffix="Test.php">packages/ai-automation/tests</directory>
+            <directory suffix="Test.php">tests</directory>
         </testsuite>
     </testsuites>
     <php>

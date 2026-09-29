@@ -1,0 +1,239 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../js/**/*.jsx';
+
+@theme {
+  --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+}
+
+button,
+input,
+select,
+textarea {
+  letter-spacing: 0;
+}
+
+.nav-item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.65rem;
+  border-radius: 6px;
+  padding: 0.7rem 0.8rem;
+  color: #475569;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.nav-item:hover,
+.nav-item.active {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.metric-card,
+.panel {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.metric-card {
+  min-height: 132px;
+  padding: 1rem;
+}
+
+.panel {
+  padding: 1rem;
+}
+
+.panel-header {
+  display: flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+.panel-header h3 {
+  font-size: 0.98rem;
+  font-weight: 700;
+}
+
+.icon-button,
+.primary-button,
+.secondary-button {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.icon-button {
+  width: 38px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+}
+
+.primary-button {
+  border: 1px solid #047857;
+  background: #047857;
+  padding: 0 0.9rem;
+  color: #ffffff;
+}
+
+.secondary-button {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  padding: 0 0.85rem;
+  color: #334155;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 720px;
+}
+
+th,
+td {
+  border-top: 1px solid #e2e8f0;
+  padding: 0.82rem 0.7rem;
+  text-align: left;
+  font-size: 0.86rem;
+}
+
+th {
+  color: #64748b;
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.status {
+  display: inline-flex;
+  border-radius: 6px;
+  padding: 0.25rem 0.45rem;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.status.active {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.status.trial {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.status.past-due {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.usage {
+  height: 8px;
+  width: 100%;
+  min-width: 90px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e2e8f0;
+}
+
+.usage span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #10b981;
+}
+
+.channel-row,
+.task-item,
+.api-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.82rem;
+}
+
+.channel-icon {
+  display: grid;
+  height: 38px;
+  width: 38px;
+  place-items: center;
+  border-radius: 7px;
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.task-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.task-item {
+  justify-content: flex-start;
+  color: #334155;
+  font-size: 0.86rem;
+  font-weight: 650;
+}
+
+.task-item svg {
+  color: #10b981;
+  flex: 0 0 auto;
+}
+
+.task-item strong {
+  margin-left: auto;
+  border-radius: 6px;
+  background: #f1f5f9;
+  padding: 0.2rem 0.45rem;
+  color: #475569;
+  font-size: 0.72rem;
+}
+
+.api-preview {
+  min-height: 84px;
+  background: #f8fafc;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+@media (max-width: 760px) {
+  .task-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .primary-button {
+    padding: 0 0.65rem;
+  }
+}

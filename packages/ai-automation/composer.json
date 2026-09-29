@@ -28,12 +28,12 @@
     },
     "autoload": {
         "psr-4": {
-            "Devniox\\AiAutomation\\": "packages/ai-automation/src/"
+            "Devniox\\AiAutomation\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Devniox\\AiAutomation\\Tests\\": "packages/ai-automation/tests/"
+            "Devniox\\AiAutomation\\Tests\\": "tests/"
         }
     },
     "extra": {
@@ -44,9 +44,9 @@
         }
     },
     "scripts": {
-        "test": "composer --working-dir=packages/ai-automation test",
-        "format": "composer --working-dir=packages/ai-automation format",
-        "check-format": "composer --working-dir=packages/ai-automation check-format"
+        "test": "phpunit",
+        "format": "pint",
+        "check-format": "pint --test"
     },
     "minimum-stability": "stable",
     "prefer-stable": true,

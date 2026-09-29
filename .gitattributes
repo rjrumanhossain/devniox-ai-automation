@@ -1,6 +1,7 @@
-/tests export-ignore
 /.github export-ignore
 /.phpunit.cache export-ignore
+/apps export-ignore
+/docs export-ignore
+/packages/ai-automation/tests export-ignore
 /phpunit.xml export-ignore
-/.env.example export-ignore
 /.gitignore export-ignore

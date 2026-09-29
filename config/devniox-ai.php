@@ -40,6 +40,7 @@ return [
         'token' => env('AI_AUTOMATION_WHATSAPP_TOKEN'),
         'phone_id' => env('AI_AUTOMATION_WHATSAPP_PHONE_ID'),
         'webhook_secret' => env('AI_AUTOMATION_WHATSAPP_WEBHOOK_SECRET'),
+        'verify_token' => env('AI_AUTOMATION_WHATSAPP_VERIFY_TOKEN'),
         'api_url' => env('AI_AUTOMATION_WHATSAPP_API_URL', 'https://graph.facebook.com/v18.0'),
         'retry_attempts' => (int) env('AI_AUTOMATION_WHATSAPP_RETRY_ATTEMPTS', 3),
     ],

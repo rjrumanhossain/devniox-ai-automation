@@ -188,6 +188,7 @@
                 <section class="card">
                     <div class="card-body">
                         <h5 class="card-title">Channel connections</h5>
+                        <p class="text-muted">Connect official Meta channels. Copy the callback URL and verify token into Meta, then save the access credentials here.</p>
                         <div class="table-responsive">
                             <table class="table">
                                 <thead><tr><th>Channel</th><th>Name</th><th>Status</th><th>Actions</th></tr></thead>
@@ -211,23 +212,79 @@
                                 </tbody>
                             </table>
                         </div>
-                        <form action="{{ route('devniox-ai.admin.channels.store') }}" method="post" data-ai-form data-kind="channel">
-                            @csrf
-                            <div class="row g-2">
-                                <div class="col-md-6">
-                                    <label for="channel-type">Channel</label>
-                                    <select id="channel-type" name="channel"><option value="whatsapp">WhatsApp</option><option value="messenger">Messenger</option></select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="channel-name">Connection name</label>
-                                    <input id="channel-name" name="connection_name" maxlength="120" placeholder="Main support">
-                                </div>
+                        <div class="row g-3 mt-2">
+                            <div class="col-12">
+                                <section class="border rounded p-3">
+                                    <h6 class="mb-2">Messenger connect</h6>
+                                    <label>Callback URL</label>
+                                    <input readonly value="{{ $channelGuides['messenger']['callback_url'] ?? '' }}" onclick="this.select()">
+                                    <form action="{{ route('devniox-ai.admin.channels.store') }}" method="post" data-ai-form data-kind="channel" class="mt-2">
+                                        @csrf
+                                        <input type="hidden" name="channel" value="messenger">
+                                        <input type="hidden" name="connection_name" value="Facebook Messenger">
+                                        <div class="row g-2">
+                                            <div class="col-md-6"><label>Page access token</label><input type="password" data-credential-key="page_access_token" autocomplete="new-password" required></div>
+                                            <div class="col-md-6"><label>Verify token</label><input data-credential-key="verify_token" placeholder="Any secret text you choose" required></div>
+                                            <div class="col-md-6"><label>App secret</label><input type="password" data-credential-key="app_secret" autocomplete="new-password"></div>
+                                            <div class="col-md-6"><label>Graph API URL</label><input data-credential-key="api_url" value="{{ config('devniox-ai.messenger.api_url') }}"></div>
+                                        </div>
+                                        <label class="d-flex align-items-center gap-2 mt-3"><input type="checkbox" name="enabled" checked style="width:auto"> Enable Messenger auto reply</label>
+                                        <button class="btn btn-primary mt-2" type="submit">Connect Messenger</button>
+                                    </form>
+                                    <form action="{{ route('devniox-ai.admin.channels.test') }}" method="post" data-ai-form data-kind="channel-test" class="mt-2">
+                                        @csrf
+                                        <input type="hidden" name="channel" value="messenger">
+                                        <button class="btn btn-outline-primary" type="submit">Test Messenger connection</button>
+                                    </form>
+                                </section>
                             </div>
-                            <label for="channel-credentials">Credentials (JSON)</label>
-                            <textarea id="channel-credentials" name="credentials_json" required placeholder='{"token":"...","phone_id":"..."}'></textarea>
-                            <label class="d-flex align-items-center gap-2 mt-3"><input type="checkbox" name="enabled" checked style="width:auto"> Enable connection</label>
-                            <button class="btn btn-primary mt-2" type="submit">Save channel</button>
-                        </form>
+                            <div class="col-12">
+                                <section class="border rounded p-3">
+                                    <h6 class="mb-2">WhatsApp connect</h6>
+                                    <label>Callback URL</label>
+                                    <input readonly value="{{ $channelGuides['whatsapp']['callback_url'] ?? '' }}" onclick="this.select()">
+                                    <form action="{{ route('devniox-ai.admin.channels.store') }}" method="post" data-ai-form data-kind="channel" class="mt-2">
+                                        @csrf
+                                        <input type="hidden" name="channel" value="whatsapp">
+                                        <input type="hidden" name="connection_name" value="WhatsApp Business">
+                                        <div class="row g-2">
+                                            <div class="col-md-6"><label>Access token</label><input type="password" data-credential-key="token" autocomplete="new-password" required></div>
+                                            <div class="col-md-6"><label>Phone number ID</label><input data-credential-key="phone_id" required></div>
+                                            <div class="col-md-6"><label>Verify token</label><input data-credential-key="verify_token" placeholder="Any secret text you choose" required></div>
+                                            <div class="col-md-6"><label>App secret</label><input type="password" data-credential-key="webhook_secret" autocomplete="new-password"></div>
+                                            <div class="col-md-6"><label>Graph API URL</label><input data-credential-key="api_url" value="{{ config('devniox-ai.whatsapp.api_url') }}"></div>
+                                        </div>
+                                        <label class="d-flex align-items-center gap-2 mt-3"><input type="checkbox" name="enabled" checked style="width:auto"> Enable WhatsApp auto reply</label>
+                                        <button class="btn btn-primary mt-2" type="submit">Connect WhatsApp</button>
+                                    </form>
+                                    <form action="{{ route('devniox-ai.admin.channels.test') }}" method="post" data-ai-form data-kind="channel-test" class="mt-2">
+                                        @csrf
+                                        <input type="hidden" name="channel" value="whatsapp">
+                                        <button class="btn btn-outline-primary" type="submit">Test WhatsApp connection</button>
+                                    </form>
+                                </section>
+                            </div>
+                        </div>
+                        <details class="mt-3">
+                            <summary>Advanced JSON credentials</summary>
+                            <form action="{{ route('devniox-ai.admin.channels.store') }}" method="post" data-ai-form data-kind="channel">
+                                @csrf
+                                <div class="row g-2">
+                                    <div class="col-md-6">
+                                        <label for="channel-type">Channel</label>
+                                        <select id="channel-type" name="channel"><option value="whatsapp">WhatsApp</option><option value="messenger">Messenger</option></select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="channel-name">Connection name</label>
+                                        <input id="channel-name" name="connection_name" maxlength="120" placeholder="Main support">
+                                    </div>
+                                </div>
+                                <label for="channel-credentials">Credentials (JSON)</label>
+                                <textarea id="channel-credentials" name="credentials_json" required placeholder='{"token":"...","phone_id":"...","verify_token":"..."}'></textarea>
+                                <label class="d-flex align-items-center gap-2 mt-3"><input type="checkbox" name="enabled" checked style="width:auto"> Enable connection</label>
+                                <button class="btn btn-primary mt-2" type="submit">Save channel</button>
+                            </form>
+                        </details>
                     </div>
                 </section>
             </div>
@@ -376,14 +433,27 @@
                 data.is_active = form.querySelector('[name="is_active"]')?.checked ? 1 : 0;
             }
             if (form.dataset.kind === 'channel') {
-                try {
-                    data.credentials = JSON.parse(data.credentials_json || '{}');
-                } catch {
-                    notify('Credentials must be valid JSON.', false);
-                    return;
+                const credentialInputs = form.querySelectorAll('[data-credential-key]');
+                if (credentialInputs.length) {
+                    data.credentials = {};
+                    credentialInputs.forEach((input) => {
+                        if (input.value.trim() !== '') {
+                            data.credentials[input.dataset.credentialKey] = input.value.trim();
+                        }
+                    });
+                } else {
+                    try {
+                        data.credentials = JSON.parse(data.credentials_json || '{}');
+                    } catch {
+                        notify('Credentials must be valid JSON.', false);
+                        return;
+                    }
                 }
                 delete data.credentials_json;
                 data.enabled = form.querySelector('[name="enabled"]')?.checked ? 1 : 0;
+            }
+            if (form.dataset.kind === 'channel-test') {
+                data.message = 'Devniox AI Automation test message.';
             }
             if (form.dataset.kind === 'ai-settings') {
                 data.use_ai_fallback = form.querySelector('[name="use_ai_fallback"]')?.checked ? 1 : 0;
@@ -399,7 +469,7 @@
                 });
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.message || 'Request failed. Check the submitted values.');
-                notify('Saved successfully.', true);
+                notify(form.dataset.kind === 'channel-test' ? 'Connection test completed.' : 'Saved successfully.', true);
                 window.location.reload();
             } catch (error) {
                 notify(error.message || 'Could not save changes.', false);

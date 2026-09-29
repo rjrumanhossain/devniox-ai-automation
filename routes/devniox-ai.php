@@ -18,7 +18,7 @@ $routeAdminPrefix = config('devniox-ai.routes.admin_prefix', 'admin');
 $adminMiddleware = config('devniox-ai.routes.admin_middleware', []);
 
 Route::prefix($routePrefix)->group(function () use ($adminMiddleware, $routeAdminPrefix, $routeWebhookPrefix) {
-    Route::post($routeWebhookPrefix.'/whatsapp', [WebhookController::class, 'whatsapp'])->name('devniox-ai.webhooks.whatsapp');
+    Route::match(['get', 'post'], $routeWebhookPrefix.'/whatsapp', [WebhookController::class, 'whatsapp'])->name('devniox-ai.webhooks.whatsapp');
     Route::match(['get', 'post'], $routeWebhookPrefix.'/messenger', [WebhookController::class, 'messenger'])->name('devniox-ai.webhooks.messenger');
     Route::post($routeWebhookPrefix.'/website', [WebhookController::class, 'website'])->name('devniox-ai.webhooks.website');
 
@@ -34,6 +34,7 @@ Route::prefix($routePrefix)->group(function () use ($adminMiddleware, $routeAdmi
         Route::post('settings', [SettingsController::class, 'store'])->name('devniox-ai.admin.settings.store');
         Route::delete('settings', [SettingsController::class, 'destroy'])->name('devniox-ai.admin.settings.destroy');
         Route::post('channels', [SettingsController::class, 'channel'])->name('devniox-ai.admin.channels.store');
+        Route::post('channels/test', [SettingsController::class, 'testChannel'])->name('devniox-ai.admin.channels.test');
         Route::delete('channels', [SettingsController::class, 'destroyChannel'])->name('devniox-ai.admin.channels.destroy');
 
         Route::apiResource('faqs', FaqController::class)->names('devniox-ai.admin.faqs');

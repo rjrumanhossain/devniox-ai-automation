@@ -24,8 +24,12 @@ class WebhookController extends Controller
 {
     public function __construct(protected ChatbotService $chatbotService, protected SettingsService $settings) {}
 
-    public function whatsapp(Request $request): JsonResponse
+    public function whatsapp(Request $request): JsonResponse|Response
     {
+        if ($request->isMethod('get')) {
+            return $this->verifyWhatsApp($request);
+        }
+
         return $this->handleChannel($request, 'whatsapp');
     }
 
@@ -172,6 +176,26 @@ class WebhookController extends Controller
         $scope = TenantResolver::resolve($request, $request->all());
         $credentials = $this->settings->credentials($scope, 'messenger');
         $verifyToken = $credentials['verify_token'] ?? config('devniox-ai.messenger.verify_token');
+
+        if (
+            $request->query('hub_mode') === 'subscribe'
+            && $verifyToken
+            && hash_equals((string) $verifyToken, (string) $request->query('hub_verify_token'))
+        ) {
+            return response((string) $request->query('hub_challenge'), 200, ['Content-Type' => 'text/plain']);
+        }
+
+        return response()->json([
+            'status' => 'rejected',
+            'message' => 'Invalid verify token.',
+        ], 403);
+    }
+
+    protected function verifyWhatsApp(Request $request): JsonResponse|Response
+    {
+        $scope = TenantResolver::resolve($request, $request->all());
+        $credentials = $this->settings->credentials($scope, 'whatsapp');
+        $verifyToken = $credentials['verify_token'] ?? config('devniox-ai.whatsapp.verify_token');
 
         if (
             $request->query('hub_mode') === 'subscribe'

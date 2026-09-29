@@ -146,7 +146,15 @@ POST /devniox-ai/admin/faqs
 
 ## Channel Credentials
 
-Credentials submitted through the admin API are encrypted before storage.
+Credentials submitted through the admin UI or API are encrypted before storage. Open `/devniox-ai/admin/settings`, then use the Messenger connect and WhatsApp connect panels to copy the callback URL, enter the Meta credentials, and run a connection test.
+
+After a channel is connected:
+
+1. Customer messages your Facebook Page or WhatsApp Business number.
+2. Meta sends the message to the package webhook.
+3. The package searches FAQ, knowledge, and product data first.
+4. If needed, the AI provider generates a reply.
+5. The reply is sent back to Messenger or WhatsApp automatically through the official API.
 
 ```http
 POST /devniox-ai/admin/channels
@@ -162,6 +170,7 @@ WhatsApp:
   "credentials": {
     "token": "EA...",
     "phone_id": "123456789",
+    "verify_token": "custom-verify-token",
     "webhook_secret": "your-app-secret",
     "api_url": "https://graph.facebook.com/v18.0"
   }
@@ -180,6 +189,19 @@ Messenger:
     "verify_token": "custom-verify-token",
     "api_url": "https://graph.facebook.com/v18.0"
   }
+}
+```
+
+Test a saved channel:
+
+```http
+POST /devniox-ai/admin/channels/test
+```
+
+```json
+{
+  "business_key": "shop-123",
+  "channel": "messenger"
 }
 ```
 

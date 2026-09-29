@@ -45,15 +45,21 @@ class AdminApiTest extends TestCase
                 'token' => 'secret-token',
                 'phone_id' => 'phone-123',
                 'webhook_secret' => 'hook-secret',
+                'verify_token' => 'verify-secret',
             ],
         ])->assertOk()
             ->assertJsonPath('data.configured', true)
+            ->assertJsonPath('data.guide.required_credentials.0', 'token')
             ->assertJsonMissing(['token' => 'secret-token']);
 
         $connection = ChannelConnection::query()->firstOrFail();
 
         $this->assertStringNotContainsString('secret-token', (string) $connection->credentials_encrypted);
         $this->assertSame('secret-token', json_decode(Crypt::decryptString($connection->credentials_encrypted), true)['token']);
+
+        $this->getJson('/devniox-ai/status?business_key=shop-3')
+            ->assertOk()
+            ->assertJsonPath('channels.whatsapp', true);
     }
 
     public function test_channel_connection_can_be_deleted_without_affecting_other_channel_or_business(): void
@@ -82,7 +88,7 @@ class AdminApiTest extends TestCase
         $this->postJson('/devniox-ai/admin/channels', [
             'business_key' => 'shop-channel-toggle',
             'channel' => 'messenger',
-            'credentials' => ['page_access_token' => 'test-token'],
+            'credentials' => ['page_access_token' => 'test-token', 'verify_token' => 'verify-token'],
             'enabled' => 0,
         ])->assertOk()
             ->assertJsonPath('data.enabled', false);
@@ -96,7 +102,7 @@ class AdminApiTest extends TestCase
         $this->postJson('/devniox-ai/admin/channels', [
             'business_key' => 'shop-channel-toggle',
             'channel' => 'messenger',
-            'credentials' => ['page_access_token' => 'test-token'],
+            'credentials' => ['page_access_token' => 'test-token', 'verify_token' => 'verify-token'],
             'enabled' => 1,
         ])->assertOk()
             ->assertJsonPath('data.enabled', true);
@@ -138,7 +144,11 @@ class AdminApiTest extends TestCase
             ->assertHeader('content-type', 'text/html; charset=UTF-8')
             ->assertSee('Automation settings')
             ->assertSee('OpenAI API key')
-            ->assertSee('Save AI settings');
+            ->assertSee('Save AI settings')
+            ->assertSee('Messenger connect')
+            ->assertSee('WhatsApp connect')
+            ->assertSee('/devniox-ai/webhooks/messenger')
+            ->assertSee('/devniox-ai/webhooks/whatsapp');
 
         $this->get('/devniox-ai/admin/faqs')
             ->assertOk()
@@ -247,5 +257,32 @@ class AdminApiTest extends TestCase
 
         $this->assertSame([], $service->list(['business_key' => 'shop-delete-a'])['settings']);
         $this->assertSame('B value', $service->list(['business_key' => 'shop-delete-b'])['settings']['legacy-key']);
+    }
+
+    public function test_admin_can_test_saved_messenger_connection(): void
+    {
+        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+        Http::fake([
+            'https://graph.facebook.com/v18.0/me*' => Http::response([
+                'id' => 'page-123',
+                'name' => 'Demo Page',
+            ]),
+        ]);
+
+        $this->postJson('/devniox-ai/admin/channels', [
+            'business_key' => 'shop-messenger-test',
+            'channel' => 'messenger',
+            'credentials' => [
+                'page_access_token' => 'page-token',
+                'verify_token' => 'verify-token',
+            ],
+        ])->assertOk();
+
+        $this->postJson('/devniox-ai/admin/channels/test', [
+            'business_key' => 'shop-messenger-test',
+            'channel' => 'messenger',
+        ])->assertOk()
+            ->assertJsonPath('data.health.connected', true)
+            ->assertJsonPath('data.health.provider.name', 'Demo Page');
     }
 }

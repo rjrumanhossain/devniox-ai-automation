@@ -36,4 +36,9 @@ class Business extends Model
     {
         return $this->hasMany(ChannelConnection::class);
     }
+
+    public function aiProviders(): HasMany
+    {
+        return $this->hasMany(AiProviderCredential::class);
+    }
 }

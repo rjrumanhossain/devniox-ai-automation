@@ -61,30 +61,49 @@ const metricIcons = [Users, Bot, Radio, Gauge];
 
 function App() {
   const [active, setActive] = useState('Dashboard');
-  const [role, setRole] = useState('super-admin');
+  const [user, setUser] = useState(null);
   const [data, setData] = useState(fallbackData);
   const [docs, setDocs] = useState({ sections: [] });
   const [loading, setLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
+    portalRequest('/portal-api/me')
+      .then((payload) => setUser(payload.user))
+      .finally(() => setAuthLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
     setLoading(true);
     Promise.all([
-      fetch(`/api/v1/${role}/overview`).then((response) => response.json()),
-      fetch('/api/v1/documentation').then((response) => response.json()),
+      portalRequest('/portal-api/overview'),
+      portalRequest('/api/v1/documentation'),
     ])
       .then(([overview, documentation]) => {
         setData(overview);
         setDocs(documentation);
       })
       .finally(() => setLoading(false));
-  }, [role]);
+  }, [user]);
 
   const activeClients = useMemo(
     () => (data.clients || []).filter((client) => client.status === 'Active').length,
     [data.clients],
   );
 
-  const isCustomer = role === 'customer';
+  const isCustomer = user?.role === 'customer';
+
+  if (authLoading) {
+    return <SplashScreen />;
+  }
+
+  if (!user) {
+    return <LoginScreen onLogin={setUser} />;
+  }
 
   return (
     <main className="app-shell">
@@ -114,14 +133,12 @@ function App() {
             <span>{loading ? 'Syncing' : 'Live'}</span>
           </div>
           <div className="topbar-actions">
-            <div className="role-switch">
-              <button className={role === 'super-admin' ? 'selected' : ''} onClick={() => setRole('super-admin')}>Super Admin</button>
-              <button className={role === 'customer' ? 'selected' : ''} onClick={() => setRole('customer')}>Customer</button>
-            </div>
+            <span className="role-badge">{isCustomer ? 'Customer' : 'Super Admin'}</span>
             <button className="icon-button" title="Search"><Search size={18} /></button>
             <button className="icon-button" title="Notifications"><Bell size={18} /></button>
             <button className="icon-button" title="Refresh"><RefreshCw size={18} /></button>
             <button className="primary-button"><PlugZap size={17} /> Connect</button>
+            <button className="secondary-button" onClick={() => logout(setUser)}>Logout</button>
           </div>
         </header>
 
@@ -143,6 +160,64 @@ function App() {
           {active === 'Settings' && <SettingsScreen />}
         </div>
       </section>
+    </main>
+  );
+}
+
+function LoginScreen({ onLogin }) {
+  const [email, setEmail] = useState('admin@admin.com');
+  const [password, setPassword] = useState('12345678');
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  function submit(event) {
+    event.preventDefault();
+    setSubmitting(true);
+    setError('');
+
+    portalRequest('/portal-api/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    })
+      .then((payload) => onLogin(payload.user))
+      .catch(() => setError('Login failed'))
+      .finally(() => setSubmitting(false));
+  }
+
+  return (
+    <main className="login-shell">
+      <section className="login-hero">
+        <span className="eyebrow">Devniox AI SaaS</span>
+        <h1>Automation Portal</h1>
+        <div className="login-quick">
+          <button type="button" onClick={() => setEmail('admin@admin.com')}>Super Admin</button>
+          <button type="button" onClick={() => setEmail('rumank@gmail.com')}>Customer</button>
+        </div>
+      </section>
+      <form className="login-card" onSubmit={submit}>
+        <h2>Login</h2>
+        <label>
+          <span>Email</span>
+          <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} />
+        </label>
+        <label>
+          <span>Password</span>
+          <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} />
+        </label>
+        {error && <div className="form-error">{error}</div>}
+        <button className="primary-button" type="submit" disabled={submitting}>
+          <ShieldCheck size={17} /> {submitting ? 'Checking' : 'Login'}
+        </button>
+      </form>
+    </main>
+  );
+}
+
+function SplashScreen() {
+  return (
+    <main className="splash-screen">
+      <div className="brand-mark">DN</div>
+      <strong>Loading</strong>
     </main>
   );
 }
@@ -492,6 +567,31 @@ function TokenPolicy() {
       <Metric label="Client mode" value="BYOK" />
     </div>
   );
+}
+
+function portalRequest(url, options = {}) {
+  return fetch(url, {
+    credentials: 'same-origin',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+      ...(options.headers || {}),
+    },
+    ...options,
+  }).then((response) => {
+    if (!response.ok) {
+      throw new Error(`Request failed: ${response.status}`);
+    }
+
+    return response.json();
+  });
+}
+
+function logout(setUser) {
+  portalRequest('/portal-api/logout', { method: 'POST' }).finally(() => {
+    setUser(null);
+  });
 }
 
 createRoot(document.getElementById('root')).render(<App />);

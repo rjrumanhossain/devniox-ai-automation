@@ -30,6 +30,118 @@ button {
   cursor: pointer;
 }
 
+button:disabled {
+  cursor: progress;
+  opacity: 0.72;
+}
+
+.splash-screen,
+.login-shell {
+  min-height: 100vh;
+}
+
+.splash-screen {
+  display: grid;
+  place-content: center;
+  gap: 0.9rem;
+  text-align: center;
+}
+
+.login-shell {
+  display: grid;
+  grid-template-columns: 1fr;
+  background:
+    linear-gradient(120deg, rgba(15, 118, 110, 0.92), rgba(30, 64, 175, 0.76)),
+    url('https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&w=1600&q=80');
+  background-position: center;
+  background-size: cover;
+  padding: 1rem;
+}
+
+.login-hero {
+  display: grid;
+  align-content: end;
+  gap: 1rem;
+  color: #ffffff;
+  min-height: 280px;
+  padding: 1rem;
+}
+
+.login-hero h1 {
+  margin: 0;
+  font-size: clamp(2.5rem, 8vw, 5.6rem);
+  font-weight: 950;
+  letter-spacing: 0;
+  line-height: 0.95;
+}
+
+.login-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.login-quick button {
+  min-height: 38px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  padding: 0 0.8rem;
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.login-card {
+  display: grid;
+  gap: 0.95rem;
+  align-self: center;
+  width: min(100%, 420px);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.24);
+  padding: 1.1rem;
+}
+
+.login-card h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 900;
+}
+
+.login-card label {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.login-card label span {
+  color: #475569;
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.login-card input {
+  min-height: 42px;
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #111827;
+  padding: 0 0.75rem;
+  font-size: 0.92rem;
+  font-weight: 650;
+}
+
+.form-error {
+  border-radius: 7px;
+  background: #fee2e2;
+  color: #b91c1c;
+  padding: 0.65rem 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
 .app-shell {
   min-height: 100vh;
 }
@@ -154,6 +266,19 @@ button {
   background: #dcfce7;
   color: #047857;
   padding: 0.28rem 0.5rem;
+}
+
+.role-badge {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  border-radius: 7px;
+  background: #e9fbf6;
+  color: #0f766e;
+  padding: 0 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 900;
+  white-space: nowrap;
 }
 
 .topbar-actions,
@@ -685,6 +810,13 @@ th {
 }
 
 @media (min-width: 760px) {
+  .login-shell {
+    grid-template-columns: minmax(0, 1.15fr) minmax(360px, 0.85fr);
+    align-items: center;
+    gap: 1rem;
+    padding: 2rem;
+  }
+
   .content {
     padding: 1rem;
   }

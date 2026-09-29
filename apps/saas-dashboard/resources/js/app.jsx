@@ -27,12 +27,15 @@ import {
 import '../css/app.css';
 
 const fallbackData = {
+  role: 'super_admin',
+  business: null,
   metrics: [],
   plans: [],
   clients: [],
   channels: [],
   providers: [],
   automation: [],
+  reply_flow: [],
 };
 
 const navItems = [
@@ -58,13 +61,15 @@ const metricIcons = [Users, Bot, Radio, Gauge];
 
 function App() {
   const [active, setActive] = useState('Dashboard');
+  const [role, setRole] = useState('super-admin');
   const [data, setData] = useState(fallbackData);
   const [docs, setDocs] = useState({ sections: [] });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
     Promise.all([
-      fetch('/api/v1/overview').then((response) => response.json()),
+      fetch(`/api/v1/${role}/overview`).then((response) => response.json()),
       fetch('/api/v1/documentation').then((response) => response.json()),
     ])
       .then(([overview, documentation]) => {
@@ -72,12 +77,14 @@ function App() {
         setDocs(documentation);
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [role]);
 
   const activeClients = useMemo(
-    () => data.clients.filter((client) => client.status === 'Active').length,
+    () => (data.clients || []).filter((client) => client.status === 'Active').length,
     [data.clients],
   );
+
+  const isCustomer = role === 'customer';
 
   return (
     <main className="app-shell">
@@ -103,10 +110,14 @@ function App() {
       <section className="workspace">
         <header className="topbar">
           <div className="topbar-title">
-            <strong>{active}</strong>
+            <strong>{isCustomer && data.business ? data.business.name : active}</strong>
             <span>{loading ? 'Syncing' : 'Live'}</span>
           </div>
           <div className="topbar-actions">
+            <div className="role-switch">
+              <button className={role === 'super-admin' ? 'selected' : ''} onClick={() => setRole('super-admin')}>Super Admin</button>
+              <button className={role === 'customer' ? 'selected' : ''} onClick={() => setRole('customer')}>Customer</button>
+            </div>
             <button className="icon-button" title="Search"><Search size={18} /></button>
             <button className="icon-button" title="Notifications"><Bell size={18} /></button>
             <button className="icon-button" title="Refresh"><RefreshCw size={18} /></button>
@@ -122,12 +133,12 @@ function App() {
 
         <div className="content">
           {active === 'Home' && <HomeScreen data={data} activeClients={activeClients} />}
-          {active === 'Dashboard' && <DashboardScreen data={data} />}
-          {active === 'Clients' && <ClientsScreen clients={data.clients} />}
-          {active === 'Plans' && <PlansScreen plans={data.plans} />}
-          {active === 'Channels' && <ChannelsScreen channels={data.channels} />}
-          {active === 'AI Providers' && <ProvidersScreen providers={data.providers} />}
-          {active === 'Billing' && <BillingScreen plans={data.plans} />}
+          {active === 'Dashboard' && <DashboardScreen data={data} isCustomer={isCustomer} />}
+          {active === 'Clients' && (isCustomer ? <CustomerSetupScreen data={data} /> : <ClientsScreen clients={data.clients || []} />)}
+          {active === 'Plans' && <PlansScreen plans={data.plans || []} />}
+          {active === 'Channels' && <ChannelsScreen channels={data.channels || []} />}
+          {active === 'AI Providers' && <ProvidersScreen providers={data.providers || []} />}
+          {active === 'Billing' && <BillingScreen plans={data.plans || []} />}
           {active === 'Docs' && <DocsScreen docs={docs} />}
           {active === 'Settings' && <SettingsScreen />}
         </div>
@@ -173,7 +184,7 @@ function HomeScreen({ data, activeClients }) {
   );
 }
 
-function DashboardScreen({ data }) {
+function DashboardScreen({ data, isCustomer }) {
   return (
     <div className="screen-grid">
       <section className="metric-grid">
@@ -196,15 +207,68 @@ function DashboardScreen({ data }) {
       </section>
 
       <section className="split-grid">
-        <ClientsScreen clients={data.clients} compact />
-        <ChannelsScreen channels={data.channels} compact />
+        {isCustomer ? <CustomerSetupScreen data={data} compact /> : <ClientsScreen clients={data.clients || []} compact />}
+        <ChannelsScreen channels={data.channels || []} compact />
       </section>
 
       <section className="split-grid">
-        <ProvidersScreen providers={data.providers} compact />
-        <AutomationScreen items={data.automation} />
+        <ProvidersScreen providers={data.providers || []} compact />
+        <AutomationScreen items={data.automation || []} />
       </section>
+
+      {isCustomer && <ReplyFlowScreen items={data.reply_flow || []} />}
     </div>
+  );
+}
+
+function CustomerSetupScreen({ data, compact = false }) {
+  const business = data.business || {};
+
+  return (
+    <section className="panel">
+      <PanelHeader title="Customer Setup" action="API key" icon={KeyRound} />
+      <div className="billing-grid">
+        <Metric label="Business" value={business.name || 'New'} />
+        <Metric label="Plan" value={business.plan || 'Starter'} />
+        <Metric label="Status" value={business.status || 'Draft'} />
+        <Metric label="API Prefix" value={business.api_key_prefix || 'dnx_live'} />
+      </div>
+      {!compact && (
+        <div className="setup-grid">
+          <ConnectionBox title="OpenAI" value="Own API key" />
+          <ConnectionBox title="Claude" value="Own API key" />
+          <ConnectionBox title="Messenger" value="Facebook page" />
+          <ConnectionBox title="Website" value="Live chat package" />
+        </div>
+      )}
+    </section>
+  );
+}
+
+function ReplyFlowScreen({ items }) {
+  return (
+    <section className="panel">
+      <PanelHeader title="Auto Reply Flow" action="Test" icon={Bot} />
+      <div className="flow-grid">
+        {items.map((item) => (
+          <article key={item.step} className="doc-line">
+            <Check size={15} />
+            <strong>{item.step}</strong>
+            <span>{item.channel}</span>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ConnectionBox({ title, value }) {
+  return (
+    <article className="connection-box">
+      <strong>{title}</strong>
+      <span>{value}</span>
+      <button className="secondary-button"><PlugZap size={16} /> Connect</button>
+    </article>
   );
 }
 
@@ -284,7 +348,7 @@ function ChannelsScreen({ channels, compact = false }) {
                   <span>{channel.connected} connected</span>
                 </div>
               </div>
-              <span className="live-pill">{channel.live} live</span>
+              <span className="live-pill">{channel.status || `${channel.live} live`}</span>
             </article>
           );
         })}

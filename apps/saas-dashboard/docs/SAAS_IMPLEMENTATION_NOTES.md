@@ -20,7 +20,13 @@
 - `GET /api/v1/super-admin/overview`: platform owner data.
 - `GET /api/v1/customer/overview`: customer business data.
 - `GET /api/v1/documentation`: setup documentation data.
+- `POST /portal-api/register`: create customer, tenant, website API key, default channel, managed AI fallback.
+- `GET /portal-api/username-availability`: validate tenant username and preview tenant URL.
+- `POST /portal-api/login`: session login.
+- `GET /portal-api/overview`: authenticated role-aware portal data.
 - `users.role`: `super_admin` or `customer`.
+- `businesses.slug`: tenant username.
+- `businesses.tenant_domain`: generated subdomain from `TENANT_DOMAIN`.
 - `plans`: package and limits.
 - `businesses`: client workspace.
 - `business_api_keys`: client package auth.
@@ -51,6 +57,14 @@
 - Use Laravel Reverb or Pusher for React notifications.
 - Keep webhook receive fast and push AI processing to queue.
 - Store all provider credentials encrypted.
+
+## Tenant Resolution
+
+- Root domain is configured by `TENANT_DOMAIN`.
+- Tenant URLs are generated as `{username}.{TENANT_DOMAIN}`.
+- `ResolveTenant` middleware maps subdomain hostnames to `businesses.slug`.
+- Reserved usernames are stored in `config/tenancy.php`.
+- Unknown tenant subdomains return `404`.
 
 ## Package Plan
 

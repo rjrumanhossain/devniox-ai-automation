@@ -165,50 +165,97 @@ function App() {
 }
 
 function LoginScreen({ onLogin }) {
+  const [mode, setMode] = useState('login');
   const [email, setEmail] = useState('admin@admin.com');
   const [password, setPassword] = useState('12345678');
+  const [name, setName] = useState('');
+  const [businessName, setBusinessName] = useState('');
+  const [username, setUsername] = useState('');
+  const [tenantUrl, setTenantUrl] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (mode !== 'register' || username.length < 3) {
+      setTenantUrl('');
+      return;
+    }
+
+    const handle = window.setTimeout(() => {
+      portalRequest(`/portal-api/username-availability?username=${encodeURIComponent(username)}`)
+        .then((payload) => setTenantUrl(payload.tenant_url || ''))
+        .catch(() => setTenantUrl(''));
+    }, 350);
+
+    return () => window.clearTimeout(handle);
+  }, [mode, username]);
 
   function submit(event) {
     event.preventDefault();
     setSubmitting(true);
     setError('');
 
-    portalRequest('/portal-api/login', {
+    const endpoint = mode === 'register' ? '/portal-api/register' : '/portal-api/login';
+    const body = mode === 'register'
+      ? { name, email, password, business_name: businessName, username }
+      : { email, password };
+
+    portalRequest(endpoint, {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify(body),
     })
       .then((payload) => onLogin(payload.user))
-      .catch(() => setError('Login failed'))
+      .catch(() => setError(mode === 'register' ? 'Registration failed' : 'Login failed'))
       .finally(() => setSubmitting(false));
   }
 
   return (
     <main className="login-shell">
-      <section className="login-hero">
-        <span className="eyebrow">Devniox AI SaaS</span>
-        <h1>Automation Portal</h1>
-        <div className="login-quick">
-          <button type="button" onClick={() => setEmail('admin@admin.com')}>Super Admin</button>
-          <button type="button" onClick={() => setEmail('rumank@gmail.com')}>Customer</button>
-        </div>
-      </section>
-      <form className="login-card" onSubmit={submit}>
-        <h2>Login</h2>
-        <label>
-          <span>Email</span>
-          <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} />
+        <section className="login-hero">
+          <span className="eyebrow">Devniox AI SaaS</span>
+          <h1>Automation Portal</h1>
+          <div className="login-quick">
+            <button type="button" onClick={() => { setMode('login'); setEmail('admin@admin.com'); }}>Super Admin</button>
+            <button type="button" onClick={() => { setMode('login'); setEmail('rumank@gmail.com'); }}>Customer</button>
+            <button type="button" onClick={() => { setMode('register'); setEmail(''); setPassword(''); }}>Start Free</button>
+          </div>
+        </section>
+        <form className="login-card" onSubmit={submit}>
+          <div className="auth-tabs">
+            <button type="button" className={mode === 'login' ? 'selected' : ''} onClick={() => setMode('login')}>Login</button>
+            <button type="button" className={mode === 'register' ? 'selected' : ''} onClick={() => setMode('register')}>Register</button>
+          </div>
+          <h2>{mode === 'register' ? 'Create Tenant' : 'Login'}</h2>
+          {mode === 'register' && (
+            <>
+              <label>
+                <span>Name</span>
+                <input type="text" value={name} onChange={(event) => setName(event.target.value)} />
+              </label>
+              <label>
+                <span>Business</span>
+                <input type="text" value={businessName} onChange={(event) => setBusinessName(event.target.value)} />
+              </label>
+              <label>
+                <span>Username</span>
+                <input type="text" value={username} onChange={(event) => setUsername(event.target.value)} />
+              </label>
+              {tenantUrl && <div className="tenant-preview">{tenantUrl}</div>}
+            </>
+          )}
+          <label>
+            <span>Email</span>
+            <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} />
         </label>
         <label>
           <span>Password</span>
           <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} />
         </label>
-        {error && <div className="form-error">{error}</div>}
-        <button className="primary-button" type="submit" disabled={submitting}>
-          <ShieldCheck size={17} /> {submitting ? 'Checking' : 'Login'}
-        </button>
-      </form>
+          {error && <div className="form-error">{error}</div>}
+          <button className="primary-button" type="submit" disabled={submitting}>
+            <ShieldCheck size={17} /> {submitting ? 'Checking' : mode === 'register' ? 'Create Account' : 'Login'}
+          </button>
+        </form>
     </main>
   );
 }

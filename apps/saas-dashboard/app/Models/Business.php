@@ -13,6 +13,7 @@ class Business extends Model
         'plan_id',
         'name',
         'slug',
+        'tenant_domain',
         'status',
         'timezone',
     ];

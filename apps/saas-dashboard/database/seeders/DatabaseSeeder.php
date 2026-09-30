@@ -55,6 +55,7 @@ class DatabaseSeeder extends Seeder
                 'owner_id' => $customer->id,
                 'plan_id' => $businessPlan?->id,
                 'name' => 'BoneekBD',
+                'tenant_domain' => 'boneekbd.'.config('tenancy.domain'),
                 'status' => 'active',
                 'timezone' => 'Asia/Dhaka',
             ],
@@ -107,6 +108,7 @@ class DatabaseSeeder extends Seeder
             [
                 'plan_id' => null,
                 'name' => 'Devniox Platform',
+                'tenant_domain' => 'devniox-platform.'.config('tenancy.domain'),
                 'status' => 'active',
                 'timezone' => 'Asia/Dhaka',
             ],

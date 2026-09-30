@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\RegisterTenant;
 use App\Http\Controllers\Api\SaasDashboardController;
+use App\Http\Requests\RegisterTenantRequest;
 use App\Models\AiProviderCredential;
 use App\Models\Business;
 use App\Models\ChannelConnection;
@@ -14,6 +16,40 @@ use Illuminate\Validation\ValidationException;
 
 class PortalAuthController extends Controller
 {
+    public function register(RegisterTenantRequest $request, RegisterTenant $registerTenant): JsonResponse
+    {
+        $result = $registerTenant->handle($request->validated());
+
+        Auth::login($result['user'], true);
+        $request->session()->regenerate();
+
+        return response()->json([
+            'user' => $this->userPayload($request),
+            'business' => [
+                'name' => $result['business']->name,
+                'username' => $result['business']->slug,
+                'tenant_url' => 'https://'.$result['business']->tenant_domain,
+            ],
+            'api_key' => $result['api_key'],
+        ], 201);
+    }
+
+    public function usernameAvailability(Request $request): JsonResponse
+    {
+        $username = str($request->query('username', ''))->lower()->trim()->slug('-')->toString();
+        $reserved = in_array($username, config('tenancy.reserved_usernames', []), true);
+        $available = $username !== ''
+            && preg_match('/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/', $username) === 1
+            && ! $reserved
+            && ! Business::query()->where('slug', $username)->exists();
+
+        return response()->json([
+            'username' => $username,
+            'available' => $available,
+            'tenant_url' => $available ? 'https://'.$username.'.'.config('tenancy.domain') : null,
+        ]);
+    }
+
     public function login(Request $request): JsonResponse
     {
         $credentials = $request->validate([
@@ -75,6 +111,8 @@ class PortalAuthController extends Controller
             if ($business) {
                 $payload['business'] = [
                     'name' => $business->name,
+                    'username' => $business->slug,
+                    'tenant_url' => $business->tenant_domain ? 'https://'.$business->tenant_domain : null,
                     'plan' => $business->plan?->name ?? 'No plan',
                     'status' => str($business->status)->headline()->toString(),
                     'api_key_prefix' => $business->apiKeys->first()?->key_prefix ?? 'dnx_live',

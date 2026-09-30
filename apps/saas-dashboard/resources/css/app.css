@@ -110,6 +110,29 @@ button:disabled {
   font-weight: 900;
 }
 
+.auth-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  background: #f8fafc;
+}
+
+.auth-tabs button {
+  min-height: 38px;
+  border: 0;
+  background: transparent;
+  color: #475569;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.auth-tabs button.selected {
+  background: #0f766e;
+  color: #ffffff;
+}
+
 .login-card label {
   display: grid;
   gap: 0.4rem;
@@ -137,6 +160,16 @@ button:disabled {
   border-radius: 7px;
   background: #fee2e2;
   color: #b91c1c;
+  padding: 0.65rem 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.tenant-preview {
+  overflow-wrap: anywhere;
+  border-radius: 7px;
+  background: #ecfdf5;
+  color: #047857;
   padding: 0.65rem 0.75rem;
   font-size: 0.82rem;
   font-weight: 850;
